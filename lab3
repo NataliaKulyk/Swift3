@@ -1,0 +1,110 @@
+import UIKit
+
+class ConcentrationViewController: UIViewController {
+    private var cardButtons = [UIButton]()
+    private var emojis = ["🐶", "🐱", "🐭", "🐰", "🦊", "🐻"]
+    private var flippedCards = [UIButton]()
+    private var matchedPairs = 0
+
+    @IBOutlet private weak var flipCountLabel: UILabel!
+    @IBOutlet private weak var titleLabel: UILabel!
+    @IBOutlet private weak var gameView: UIStackView!
+
+    private var flipCount = 0 {
+        didSet {
+            flipCountLabel.text = "Flips: \(flipCount)"
+        }
+    }
+
+    @IBAction private func touchCard(_ sender: UIButton) {
+        flipCount += 1
+        if let cardNumber = cardButtons.firstIndex(of: sender) {
+            if !flippedCards.contains(sender) {
+                flipCard(withEmoji: emojis[cardNumber], on: sender)
+                flippedCards.append(sender)
+                if flippedCards.count == 2 {
+                    checkForMatch()
+                }
+            }
+        }
+    }
+
+    private func flipCard(withEmoji emoji: String, on button: UIButton) {
+        if button.currentTitle == emoji {
+            button.setTitle("", for: .normal)
+            button.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
+        } else {
+            button.setTitle(emoji, for: .normal)
+            button.backgroundColor = #colorLiteral(red: 1, green: 1, blue, alpha: 1)
+        }
+    }
+
+    private func checkForMatch() {
+        if flippedCards.count == 2 {
+            if flippedCards[0].currentTitle == flippedCards[1].currentTitle {
+                flippedCards[0].isEnabled = false
+                flippedCards[1].isEnabled = false
+                matchedPairs += 1
+                if matchedPairs == cardButtons.count / 2 {
+                    titleLabel.text = "Congratulations! You've won!"
+                }
+            } else {
+                for cardButton in flippedCards {
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+                        self.flipCard(withEmoji: "", on: cardButton)
+                    }
+                }
+            }
+            flippedCards.removeAll()
+        }
+    }
+
+    @IBAction private func resetGame(_ sender: UIButton) {
+        emojis.shuffle()
+        matchedPairs = 0
+        titleLabel.text = "Concentration Game"
+        flipCount = 0
+        for button in cardButtons {
+            button.setTitle("", for: .normal)
+            button.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
+            button.isEnabled = true
+        }
+        flippedCards.removeAll()
+    }
+
+    @IBAction private func addCard() {
+        if cardButtons.count < 12 {
+            let button = UIButton()
+            button.setTitle("", for: .normal)
+            button.backgroundColor = #colorLiteral(red: 1, green: 0.5763723254, blue: 0, alpha: 1)
+            button.addTarget(self, action: #selector(touchCard(_:)), for: .touchUpInside)
+            cardButtons.append(button)
+            gameView.addArrangedSubview(button)
+            updateViewFromModel()
+        }
+    }
+
+    @IBAction private func removeCard() {
+        if cardButtons.count > 6 {
+            let button = cardButtons.removeLast()
+            gameView.removeArrangedSubview(button)
+            updateViewFromModel()
+        }
+    }
+
+    private func updateViewFromModel() {
+        for (index, button) in cardButtons.enumerated() {
+            if index < emojis.count {
+                button.isHidden = false
+            } else {
+                button.isHidden = true
+            }
+        }
+    }
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        emojis.shuffle()
+        updateViewFromModel()
+    }
+}
